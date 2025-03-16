@@ -1,31 +1,31 @@
-const mongoose = require("mongoose");
-const Expense = require("../../models/Expense");
-const connectDB = require("../../config/db");
+import jwt from "jsonwebtoken";
+import connectDB from "../../config/db";
+import Expense from "../../models/Expense";
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
+  if (req.method !== "POST")
+    return res.status(405).json({ error: "Method Not Allowed" });
+
   await connectDB();
 
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
 
   try {
-    const { description, amount, category, recurring, dueDate } = req.body;
+    const { userId } = jwt.verify(token, process.env.JWT_SECRET);
+    const { category, amount, description, recurring, dueDate } = req.body;
     console.log(req.body);
-    const newExpense = new Expense({
-      description,
-      amount,
+    const expense = await Expense.create({
+      userId,
       category,
+      amount,
+      description,
       recurring,
       dueDate,
     });
-    await newExpense.save();
-    return res
-      .status(201)
-      .json({ message: "Expense added successfully", newExpense });
+    res.status(201).json(expense);
   } catch (error) {
-    return res
-      .status(500)
-      .json({ error: "Server Error", details: error.message });
+    console.log(error);
+    res.status(500).json({ error: "Server error" });
   }
-};
+}
