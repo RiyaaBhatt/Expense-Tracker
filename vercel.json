@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/expenses/notifyExpenses",
-      "schedule": "7 16 * * *"
+      "schedule": "19 16 * * *"
     }
   ],
   "routes": [
