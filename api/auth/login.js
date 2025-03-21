@@ -1,9 +1,18 @@
+import cors from 'cors';
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import connectDB from "../../config/db";
 import User from "../../models/User";
 
-export default async function handler(req, res) {
+// CORS middleware configuration
+const corsMiddleware = cors({
+  origin: ['http://localhost:5000', 'https://pennywisefrontend.vercel.app/'],
+  methods: ['POST'],
+  credentials: true,
+});
+
+// Wrapper for API handler with CORS
+const handler = async (req, res) => {
   if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
 
   await connectDB();
@@ -23,4 +32,16 @@ export default async function handler(req, res) {
   } catch (error) {
     res.status(500).json({ error: "Server error" });
   }
+};
+
+// Export the handler wrapped with CORS middleware
+export default async function wrappedHandler(req, res) {
+  return new Promise((resolve, reject) => {
+    corsMiddleware(req, res, (err) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(handler(req, res));
+    });
+  });
 }

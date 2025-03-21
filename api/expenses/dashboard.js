@@ -1,8 +1,15 @@
+import cors from 'cors';
 import jwt from "jsonwebtoken";
 import dbConnect from "../../config/db";
 import Expense from "../../models/Expense";
 
-export default async function handler(req, res) {
+const corsMiddleware = cors({
+  origin: ['http://localhost:5000', 'https://pennywisefrontend.vercel.app/'],
+  methods: ['GET'],
+  credentials: true,
+});
+
+const handler = async (req, res) => {
   if (req.method !== "GET") {
     return res.status(405).json({ message: "Method Not Allowed" });
   }
@@ -46,4 +53,15 @@ export default async function handler(req, res) {
     console.error("Dashboard API Error:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
+};
+
+export default async function wrappedHandler(req, res) {
+  return new Promise((resolve, reject) => {
+    corsMiddleware(req, res, (err) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(handler(req, res));
+    });
+  });
 }

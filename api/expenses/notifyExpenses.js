@@ -1,9 +1,16 @@
+const cors = require('cors');
 const connectDB = require("../../config/db");
 const Expense = require("../../models/Expense");
 const nodemailer = require("nodemailer");
 const User = require("../../models/User");
 
-module.exports = async (req, res) => {
+const corsMiddleware = cors({
+  origin: ['http://localhost:5000', 'https://pennywisefrontend.vercel.app/'],
+  methods: ['GET'],
+  credentials: true,
+});
+
+const handler = async (req, res) => {
   await connectDB();
 
   if (req.method !== "GET") {
@@ -50,9 +57,8 @@ module.exports = async (req, res) => {
           from: process.env.SMTP_USER,
           to: user.email,
           subject: "Upcoming Expense Reminder",
-          text: `Hello ${user.name},\n\nYou have an upcoming expense of $${
-            expense.amount
-          } due on ${expense.dueDate.toDateString()}.\n\nPlease ensure timely payment.\n\nThanks!`,
+          text: `Hello ${user.name},\n\nYou have an upcoming expense of $${expense.amount
+            } due on ${expense.dueDate.toDateString()}.\n\nPlease ensure timely payment.\n\nThanks!`,
         });
       }
     }
@@ -66,4 +72,15 @@ module.exports = async (req, res) => {
       .status(500)
       .json({ error: "Server Error", details: error.message });
   }
+};
+
+module.exports = async (req, res) => {
+  return new Promise((resolve, reject) => {
+    corsMiddleware(req, res, (err) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(handler(req, res));
+    });
+  });
 };

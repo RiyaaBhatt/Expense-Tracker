@@ -1,8 +1,15 @@
+import cors from 'cors';
 import jwt from "jsonwebtoken";
 import connectDB from "../../config/db";
 import Expense from "../../models/Expense";
 
-export default async function handler(req, res) {
+const corsMiddleware = cors({
+  origin: ['http://localhost:5000', 'https://pennywisefrontend.vercel.app/'],
+  methods: ['PUT'],
+  credentials: true,
+});
+
+const handler = async (req, res) => {
   if (req.method !== "PUT")
     return res.status(405).json({ error: "Method Not Allowed" });
 
@@ -25,4 +32,15 @@ export default async function handler(req, res) {
     console.error(error);
     res.status(500).json({ error: "Server error" });
   }
+};
+
+export default async function wrappedHandler(req, res) {
+  return new Promise((resolve, reject) => {
+    corsMiddleware(req, res, (err) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(handler(req, res));
+    });
+  });
 }
